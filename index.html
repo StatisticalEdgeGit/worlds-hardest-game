@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>World's Hardest Game</title>
+<meta name="description" content="Hop a neon dot between lanes through 100 levels with 3 lives, while VEX talks at you.">
+<meta name="theme-color" content="#06050d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hardest">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-512.png">
+<!-- app:head -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600&family=Tilt+Neon&display=swap">
+<link rel="stylesheet" href="style.css">
+<!-- /app:head -->
+</head>
+<body>
+<!-- app:body -->
+<div id="app">
+  <canvas id="game" aria-label="Game view"></canvas>
+  <div class="cue" id="cue" aria-hidden="true"></div>
+
+  <div class="hud" id="hud" hidden>
+    <div class="hud-row">
+      <div class="hud-level"><b id="hudLevel">1</b><small id="hudWorld">First Steps</small></div>
+      <div class="lives" id="hudLives" role="img" aria-label="3 lives left"><i></i><i></i><i></i></div>
+      <div class="used" id="hudUsed" hidden><b id="hudUsedN">0</b><small id="hudUsedLabel">lives used</small></div>
+      <div class="hud-right">
+        <span class="dist" id="hudDist" aria-label="Distance this run">0 m</span>
+        <button class="pause-btn" id="pauseBtn" type="button" aria-label="Pause"><span></span></button>
+      </div>
+    </div>
+    <div class="progress"><div id="progressFill"></div></div>
+    <div class="race-bar" id="raceBar" hidden><div class="race-track" id="raceTrack"></div></div>
+  </div>
+
+  <aside class="vex" id="vex" aria-hidden="true">
+    <div class="vex-head"><i class="vex-light"></i>VEX<span class="vex-dots"><b></b><b></b><b></b></span><span class="vex-tag">Tip</span></div>
+    <p class="vex-text"><span id="vexShown"></span><span class="vex-rest" id="vexRest"></span></p>
+    <div class="vex-timer"><div id="vexTimer"></div></div>
+  </aside>
+  <p class="sr-only" id="vexLive" aria-live="polite"></p>
+
+  <div class="badge" id="badge" hidden>Reversed</div>
+  <div class="perf" id="perf" hidden></div>
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <div id="pads" hidden>
+    <button class="pad left" id="padLeft" type="button" aria-label="Hop left">
+      <span class="face"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></span>
+    </button>
+    <button class="pad right" id="padRight" type="button" aria-label="Hop right">
+      <span class="face"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span>
+    </button>
+  </div>
+
+  <div class="banner" id="banner" aria-live="polite">
+    <p class="eyebrow" id="bannerEyebrow"></p>
+    <h2 id="bannerTitle"></h2>
+  </div>
+
+  <section class="screen" id="scrTitle">
+    <div class="screen-inner">
+      <p class="eyebrow"><span>100 levels</span><span aria-hidden="true">/</span><span>2 ways to suffer</span></p>
+      <h1 class="title"><span>World's</span><span class="hot">Hardest</span><span>Game</span></h1>
+      <p class="vex-quote"><b>VEX</b><span id="titleVex"></span></p>
+      <div class="modes">
+        <section class="mode" aria-labelledby="modeSurvivalName">
+          <h2 class="mode-name" id="modeSurvivalName">Survival</h2>
+          <p class="mode-rule">3 lives for all 100 levels. Lose them all and it's back to level&nbsp;1.</p>
+          <p class="mode-status" id="survivalStatus"></p>
+          <button class="btn primary" id="btnSurvival" type="button">Start</button>
+          <button class="link-btn" id="btnSurvivalNew" type="button" hidden>Start over</button>
+        </section>
+        <section class="mode" aria-labelledby="modeMarathonName">
+          <h2 class="mode-name" id="modeMarathonName">Marathon</h2>
+          <p class="mode-rule">Unlimited lives. Your score is how many it takes to finish level&nbsp;100. Lower is better.</p>
+          <p class="mode-status" id="marathonStatus"></p>
+          <button class="btn primary" id="btnMarathon" type="button">Start</button>
+          <button class="link-btn" id="btnMarathonNew" type="button" hidden>Start over</button>
+        </section>
+      </div>
+      <section class="mode race-card" id="raceCard" hidden aria-labelledby="raceName">
+        <div class="race-card-text">
+          <h2 class="mode-name" id="raceName">Race</h2>
+          <p class="mode-rule">Up to 4 players on the same Wi-Fi race the same levels. First to the finish wins.</p>
+        </div>
+        <div class="race-card-actions">
+          <button class="btn primary" id="btnHost" type="button">Host</button>
+          <button class="btn ghost" id="btnJoin" type="button">Join</button>
+        </div>
+      </section>
+      <dl class="stats">
+        <div><dt>Survival best</dt><dd id="stHighest">&mdash;</dd></div>
+        <div><dt>Marathon best</dt><dd id="stMarathon">&mdash;</dd></div>
+        <div><dt>Distance</dt><dd id="stDist">0 m</dd></div>
+        <div><dt>Per life</dt><dd id="stAvg">&mdash;</dd></div>
+      </dl>
+      <p class="player-line" id="playerLine" hidden><span id="playerText"></span> <button class="link-btn" id="btnName" type="button">Pick a name</button></p>
+      <div class="link-row">
+        <button class="link-btn" id="btnBoards" type="button" hidden>Leaderboards</button>
+        <button class="link-btn" id="btnStats" type="button">All stats</button>
+      </div>
+      <p class="keys">Keyboard: <kbd>&larr;</kbd> <kbd>&rarr;</kbd> or <kbd>A</kbd> <kbd>D</kbd> to hop, <kbd>P</kbd> to pause.</p>
+    </div>
+  </section>
+
+  <section class="screen" id="scrName" hidden>
+    <div class="screen-inner">
+      <p class="eyebrow">Leaderboards</p>
+      <h2 class="big" id="nameTitle">Pick a name</h2>
+      <p class="lede">It goes next to your scores. 2 to 16 letters, numbers, spaces, dots, dashes or underscores.</p>
+      <form class="name-form" id="nameForm" novalidate>
+        <label class="field-label" for="nameInput">Nickname</label>
+        <input class="field" id="nameInput" name="nickname" type="text" maxlength="16" autocomplete="nickname" autocapitalize="off" spellcheck="false" required>
+        <p class="form-error" id="nameError" role="alert" hidden></p>
+        <button class="btn primary" id="btnNameSave" type="submit">Save name</button>
+      </form>
+      <button class="btn ghost" id="btnNameSkip" type="button">Back</button>
+    </div>
+  </section>
+
+  <section class="screen" id="scrBoards" hidden>
+    <div class="screen-inner">
+      <p class="eyebrow">Leaderboards</p>
+      <h2 class="big">Rankings</h2>
+      <div class="tabs" id="boardTabs" role="tablist" aria-label="Leaderboards">
+        <button type="button" role="tab" data-board="survival" aria-selected="true">Survival</button>
+        <button type="button" role="tab" data-board="marathon" aria-selected="false">Marathon</button>
+        <button type="button" role="tab" data-board="marathon-live" aria-selected="false">In progress</button>
+        <button type="button" role="tab" data-board="distance" aria-selected="false">Distance</button>
+        <button type="button" role="tab" data-board="deaths" aria-selected="false">Lives lost</button>
+        <button type="button" role="tab" data-board="levels" aria-selected="false">Toughest levels</button>
+      </div>
+      <p class="board-note" id="boardNote"></p>
+      <ol class="board" id="boardList" aria-live="polite"></ol>
+      <div class="actions">
+        <button class="btn ghost" id="btnBoardsBack" type="button">Back</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="scrJoin" hidden>
+    <div class="screen-inner">
+      <p class="eyebrow">Race</p>
+      <h2 class="big">Join a race</h2>
+      <p class="lede">Ask the host for their 4-letter room code.</p>
+      <form class="name-form" id="joinForm" novalidate>
+        <label class="field-label" for="joinCode">Room code</label>
+        <input class="field code-field" id="joinCode" name="code" type="text" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
+        <p class="form-error" id="joinError" role="alert" hidden></p>
+        <button class="btn primary" id="btnJoinGo" type="submit">Join</button>
+      </form>
+      <button class="btn ghost" id="btnJoinBack" type="button">Back</button>
+    </div>
+  </section>
+
+  <section class="screen" id="scrLobby" hidden>
+    <div class="screen-inner">
+      <p class="eyebrow">Race &middot; room code</p>
+      <h2 class="room-code" id="lobbyCode">&hellip;</h2>
+      <p class="lede" id="lobbyJoinHint"></p>
+      <ul class="lobby-players" id="lobbyPlayers"></ul>
+      <div class="race-settings">
+        <label class="field-label" for="raceStart">Start at</label>
+        <select class="field" id="raceStart"></select>
+        <label class="field-label" for="raceLength">Race length</label>
+        <select class="field" id="raceLength">
+          <option value="3">3 levels</option>
+          <option value="5">5 levels</option>
+          <option value="10">10 levels</option>
+          <option value="20">20 levels</option>
+        </select>
+        <label class="field-label" for="raceCheckpoint">Checkpoints</label>
+        <select class="field" id="raceCheckpoint">
+          <option value="1">Every level</option>
+          <option value="3">Every 3 levels</option>
+          <option value="5">Every 5 levels</option>
+        </select>
+      </div>
+      <p class="board-note" id="lobbySummary"></p>
+      <p class="form-error" id="lobbyError" role="alert" hidden></p>
+      <div class="actions">
+        <button class="btn primary" id="btnRaceGo" type="button">Start race</button>
+        <p class="keys" id="lobbyWait" hidden>Waiting for the host to start the race.</p>
+        <button class="btn ghost" id="btnLobbyLeave" type="button">Leave</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="scrRaceEnd" hidden>
+    <div class="screen-inner">
+      <p class="eyebrow">Race over</p>
+      <h2 class="big win" id="raceEndTitle">You won</h2>
+      <ol class="board" id="raceStandings"></ol>
+      <p class="vex-quote"><b>VEX</b><span id="raceEndVex"></span></p>
+      <div class="actions">
+        <button class="btn primary" id="btnRaceAgain" type="button">Race again</button>
+        <p class="keys" id="raceEndWait" hidden>Waiting for the host to start another race.</p>
+        <button class="btn ghost" id="btnRaceLeave" type="button">Leave race</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="scrStats" hidden>
+    <div class="screen-inner">
+      <p class="eyebrow">Everything VEX knows about you</p>
+      <h2 class="big">Stats</h2>
+      <dl class="stat-list" id="statsList"></dl>
+      <div class="actions">
+        <button class="btn ghost" id="btnStatsBack" type="button">Back</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="scrPause" hidden>
+    <div class="screen-inner">
+      <p class="eyebrow" id="pauseText">Level 1</p>
+      <h2 class="big">Paused</h2>
+      <p class="vex-quote"><b>VEX</b><span id="pauseVex"></span></p>
+      <div class="actions">
+        <button class="btn primary" id="btnResume" type="button">Resume</button>
+        <button class="btn ghost" id="btnQuit" type="button">Save and quit</button>
+      </div>
+      <p class="keys" id="pauseNote">Quitting keeps your lives. You'll restart this level when you continue.</p>
+    </div>
+  </section>
+
+  <section class="screen" id="scrOver" hidden>
+    <div class="screen-inner">
+      <p class="eyebrow danger">Out of lives</p>
+      <h2 class="big danger">Game over</h2>
+      <p class="lede" id="overText"></p>
+      <p class="note" id="overNote" hidden>New highest level.</p>
+      <p class="note rank" id="overRank" hidden></p>
+      <dl class="stats stats-3" id="overStats"></dl>
+      <p class="vex-quote"><b>VEX</b><span id="overVex"></span></p>
+      <div class="actions">
+        <button class="btn primary" id="btnAgain" type="button">Survival again from level 1</button>
+        <button class="btn ghost" id="btnOverTitle" type="button">Title screen</button>
+      </div>
+      <div class="link-row">
+        <button class="link-btn" id="btnOverBoards" type="button" hidden>Leaderboards</button>
+        <button class="link-btn" id="btnOverStats" type="button">All stats</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="scrWin" hidden>
+    <div class="screen-inner">
+      <p class="eyebrow" id="winEyebrow">Level 100 clear</p>
+      <h2 class="big win">You beat it</h2>
+      <p class="lede" id="winText"></p>
+      <p class="note" id="winNote"></p>
+      <p class="note rank" id="winRank" hidden></p>
+      <p class="vex-quote"><b>VEX</b><span id="winVex"></span></p>
+      <div class="actions">
+        <button class="btn primary" id="btnWinAgain" type="button">Run again</button>
+        <button class="btn ghost" id="btnWinTitle" type="button">Title screen</button>
+      </div>
+    </div>
+  </section>
+</div>
+<script src="js/levels.js"></script>
+<script src="js/cues.js"></script>
+<script src="js/vex.js"></script>
+<script src="js/online.js"></script>
+<script src="js/race.js"></script>
+<script src="js/render.js"></script>
+<script src="js/game.js"></script>
+<!-- /app:body -->
+</body>
+</html>

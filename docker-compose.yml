@@ -1,0 +1,41 @@
+# Postgres plus the Node server (which serves the game and the leaderboard API).
+#   docker compose up -d --build     then open http://localhost:8080
+name: whg
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: whg
+      POSTGRES_USER: whg
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-whg-local-dev}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U whg -d whg"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    ports:
+      # Only on this computer, and not 5432 in case another Postgres is already using it.
+      - "127.0.0.1:${DB_PORT:-5433}:5432"
+
+  api:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://whg:${POSTGRES_PASSWORD:-whg-local-dev}@db:5432/whg
+      PORT: 8080
+      # The address friends on your Wi-Fi should open, shown in race lobbies.
+      PUBLIC_URL: ${PUBLIC_URL:-}
+    ports:
+      - "${API_PORT:-8080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:

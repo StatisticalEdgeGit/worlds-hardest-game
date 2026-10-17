@@ -1,0 +1,8 @@
+{
+  "name": "whg-play",
+  "private": true,
+  "description": "Draws the QR code for the World's Hardest Game play launcher.",
+  "dependencies": {
+    "qrcode": "1.5.4"
+  }
+}
